@@ -4,10 +4,15 @@ const overview = document.querySelector(".overview");
 const username = "JLOtten";
 //select the ul to display the repos list
 const repoList = document.querySelector(".repo-list");
-//selects the section with a class of "repos" where all repo infor appears
+//selects the section with a class of "repos" where all repo info appears
 const allReposContainer = document.querySelector(".repos");
 //selects the section with a class of "repo-data" where individual repo info appears
 const repoData = document.querySelector(".repo-data");
+//select the back to repo gallery button
+const backToGalleryButton = document.querySelector(".view-repos");
+//select the input with the "search by name" placeholder
+const filterInput = document.querySelector(".filter-repos");
+
 
 const getProfileInfo = async function () {
     const userInfo = await fetch(`https://api.github.com/users/${username}`);
@@ -37,19 +42,20 @@ const displayUserInfo = function(data) {
   </div>`;
   //append this div to the overview element
   overview.append(div);
-  getRepos();
+  getRepos(username);
 };
 
 //create an async function to fetch repos
-const getRepos = async function () {
+const getRepos = async function (username) {
     const fetchRepos = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=100`);
     const repoData = await fetchRepos.json();
-    console.log(repoData); 
-displayRepo(repoData); 
+    displayRepo(repoData); 
 };
 
 //create a function to display info about each repo
 const displayRepo = function (repos) {
+    //show the filterInput element
+    filterInput.classList.remove("hide");
     for (const repo of repos) { //loop throu each repo in the repos
         const repoItem = document.createElement("li"); //create a list item for each repo
         repoItem.classList.add("repo"); //give each item a class of repo
@@ -70,12 +76,12 @@ const getRepoInfo = async function (repoName) {
     //fetch request to grab info about the specific repo
     const fetchInfo = await fetch(`https://api.github.com/repos/${username}/${repoName}`);
     const repoInfo = await fetchInfo.json(); //save JSON repsonse to variable
-    console.log(repoInfo);
+    //console.log(repoInfo);
 
     //grab languages from api
     const fetchLanguages = await fetch(repoInfo.languages_url); //get the language_url property from the repoInto json response
     const languageData = await fetchLanguages.json();
-    console.log(languageData);
+    //console.log(languageData);
 
     //make a list(array) of languages
     const languages = []; //make an empty array
@@ -87,6 +93,8 @@ const getRepoInfo = async function (repoName) {
 
 //create a function to display specific repo info
 const displayRepoInfo = function (repoInfo, languages) {
+    //remove hide from back to gallery button
+    backToGalleryButton.classList.remove("hide");
     //empty the HTML section with a class of repo-data
     repoData.innerHTML = "";
     repoData.classList.remove("hide");
@@ -95,12 +103,38 @@ const displayRepoInfo = function (repoInfo, languages) {
     const div = document.createElement("div");
     let innerHTML = `<h3>Name: ${repoInfo.name}</h3>`
     if (repoInfo.description) { //handle for the case if there's no description for repo
-        innerHTML += `<p>Description: ${repoInfo.description}</p>`
+        innerHTML += `<p>Description: ${repoInfo.description}</p>`;
     } //if there's no description listed in GitHub, skip this category
     innerHTML += `<p>Default Branch: ${repoInfo.default_branch}</p>
     <p>Languages: ${languages.join(", ")}</p> 
-    <a class="visit" href="${repoInfo.html_url}" target="_blank" rel="noreferrer noopener">View Repo on GitHub!</a>`
+    <a class="visit" href="${repoInfo.html_url}" target="_blank" rel="noreferrer noopener">View Repo on GitHub!</a>`;
     div.innerHTML = innerHTML;
     //append the new div element to the section with class of repo-data
     repoData.append(div);
 };
+
+backToGalleryButton.addEventListener("click", function (e) {
+    //unhide (display) section with class"repos"
+    allReposContainer.classList.remove("hide");
+    //unhide location where all the repo info appears
+    repoData.classList.add("hide");
+    //add "hide" class to back to gallery button
+    backToGalleryButton.classList.add("hide");
+});
+
+//dynamic search
+filterInput.addEventListener("input", function (e) {
+    const searchInput = e.target.value;
+    const repos = document.querySelectorAll(".repo");
+    const lowercaseSearchInput = searchInput.toLowerCase();
+
+    //loop through each repo inside repos element
+    for (const repo of repos) {
+        const lowercaseInnerText = repo.innerText.toLowerCase();
+        if (lowercaseInnerText.includes(lowercaseSearchInput)) { //if innerText of repo includes search input, 
+            repo.classList.remove("hide"); //show that repo
+        } else { //if innerText doesn't include search input,
+            repo.classList.add("hide"); //don't show repo
+        }
+    }
+});
